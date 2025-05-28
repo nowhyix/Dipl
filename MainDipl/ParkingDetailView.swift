@@ -14,43 +14,68 @@ struct ParkingDetailView: View {
     @EnvironmentObject var authManager: AuthManager
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                headerView
-                
-                Picker("Уровень", selection: $selectedLevel) {
-                    ForEach(parking.levelNumbers, id: \.self) { level in
-                        Text("Уровень \(level)").tag(level)
+        GeometryReader { geometry in
+            ZStack {
+                VStack(spacing: 0) {
+                    headerView
+
+                    if let level = parkingLevel {
+                        LevelMapView(level: level, selectedSpot: $selectedSpot)
+                    } else if isLoading {
+                        ProgressView()
+                    } else if let error = error {
+                        ErrorView(error: error, retryAction: loadLevelData)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-                .onChange(of: selectedLevel) { _ in
-                    loadLevelData()
+
+                // Панель с кнопками уровней — по правому краю и вертикально по центру
+                HStack {
+                    Spacer()
+                    VStack {
+                        ForEach(parking.levelNumbers, id: \.self) { level in
+                            Button(action: {
+                                selectedLevel = level
+                                loadLevelData()
+                            }) {
+                                Text("\(level)")
+                                    .frame(width: 40, height: 40)
+                                    .background(selectedLevel == level ? Color.gray : Color.clear)
+                                    .foregroundColor(.black)
+                                    .cornerRadius(8)
+                                    .padding(.vertical, 4)
+                            }
+                        }
+                    }
+                    .padding()
+                    .cornerRadius(12)
+                    .shadow(radius: 3)
+                    .padding(.trailing, 8)
                 }
-                
-                if let level = parkingLevel {
-                    LevelMapView(level: level, selectedSpot: $selectedSpot)
-                } else if isLoading {
-                    ProgressView()
-                } else if let error = error {
-                    ErrorView(error: error, retryAction: loadLevelData)
-                }
-            }
-            
-            if let spot = selectedSpot {
-                bookingButton(for: spot)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+
+                // Кнопка бронирования снизу
+                if let spot = selectedSpot {
+                    VStack {
+                        Spacer()
+                        bookingButton(for: spot)
+                    }
                     .transition(.move(edge: .bottom))
+                }
             }
-        }
-        .fullScreenCover(isPresented: $showBookingView) {
-            if let spot = selectedSpot {
-                BookingView(parking: parking, spot: spot, isPresented: $showBookingView)
-                    .environmentObject(authManager)
+            .edgesIgnoringSafeArea(.bottom)
+            .onAppear {
+                loadLevelData()
             }
-        }
-        .onAppear {
-            loadLevelData()
+            .fullScreenCover(isPresented: $showBookingView) {
+                if let spot = selectedSpot {
+                    BookingView(parking: parking, spot: spot, isPresented: $showBookingView)
+                        .environmentObject(authManager)
+                        .onDisappear {
+                            // Обновляем данные после закрытия окна бронирования
+                            refreshLevelData()
+                        }
+                }
+            }
         }
     }
     
@@ -84,10 +109,16 @@ struct ParkingDetailView: View {
         .padding()
     }
     
+    private func refreshLevelData() {
+        loadLevelData() // Просто вызываем существующий метод загрузки
+    }
+    
     private func bookingButton(for spot: ParkingSpot) -> some View {
         VStack(spacing: 0) {
             Divider()
-            Button(action: { showBookingView = true }) {
+            Button(action: {
+                showBookingView = true
+            }) {
                 Text("Забронировать место \(spot.spotNumber)")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
@@ -129,30 +160,34 @@ struct ParkingDetailView: View {
 struct LevelMapView: View {
     let level: ParkingLevel
     @Binding var selectedSpot: ParkingSpot?
-    
+
     var body: some View {
         GeometryReader { geometry in
-            ScrollView([.horizontal, .vertical], showsIndicators: false) {
+            ZStack {
+                // Фото как фоновое изображение
                 WebImage(url: URL(string: level.levelSchema))
                     .resizable()
-                    .indicator(.activity)
                     .aspectRatio(contentMode: .fit)
                     .frame(width: geometry.size.width)
-                    .background(Color(.systemGray6))
-                    .overlay(
-                        ForEach(level.parkingSpots) { spot in
-                            ParkingSpotView(spot: spot, geometry: geometry, isSelected: selectedSpot?.id == spot.id)
-                                .onTapGesture {
-                                    if spot.spotStatus == .free {
-                                        selectedSpot = spot
-                                    }
-                                }
+                    .clipped()
+                
+                // Парковочные места поверх
+                ForEach(level.parkingSpots) { spot in
+                    ParkingSpotView(spot: spot, geometry: geometry, isSelected: selectedSpot?.id == spot.id)
+                        .onTapGesture {
+                            if spot.spotStatus == .free {
+                                selectedSpot = spot
+                            }
                         }
-                    )
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGray6))
+            .clipped()
         }
     }
 }
+
 
 struct ParkingSpotView: View {
     let spot: ParkingSpot
@@ -184,7 +219,7 @@ struct ParkingSpotView: View {
     private var spotIcon: String {
         switch spot.spotStatus {
         case .free: return "car.fill"
-        case .booked: return "clock.fill"
+        case .reserved: return "clock.fill"
         case .occupied: return "xmark"
         }
     }

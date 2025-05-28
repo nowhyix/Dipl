@@ -53,13 +53,13 @@ struct ParkingSpot: Codable, Identifiable {
 
 enum SpotStatus: String {
     case free = "free"
-    case booked = "booked"
+    case reserved = "reserved"
     case occupied = "occupied"
     
     var color: Color {
         switch self {
         case .free: return .green
-        case .booked: return .orange
+        case .reserved: return .orange
         case .occupied: return .red
         }
     }
@@ -76,6 +76,7 @@ struct Reservation: Codable, Identifiable {
      let parkingStart: Date?
      let parkingEnd: Date?
      let status: String
+    
      
      enum CodingKeys: String, CodingKey {
          case id

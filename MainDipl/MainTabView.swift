@@ -5,7 +5,7 @@ struct MainTabView: View {
     
     var body: some View {
         TabView {
-            MapView() // Теперь будет работать, так как MapManager передается через environmentObject
+            MapView()
                 .tabItem {
                     Label("Главная", systemImage: "map")
                 }
@@ -15,11 +15,10 @@ struct MainTabView: View {
                     Label("Обратная связь", systemImage: "bubble.left")
                 }
 
-            ProfileView()
+            ProfileView(parking: nil)  // Передаем nil
                 .tabItem {
                     Label("Профиль", systemImage: "person")
                 }
         }
-        .accentColor(.blue)
     }
 }

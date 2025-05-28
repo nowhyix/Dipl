@@ -62,7 +62,6 @@ struct MapView: View {
         .fullScreenCover(isPresented: $showParkingDetail) {
             if let parking = selectedParking {
                 ParkingDetailView(parking: parking)
-                    // Pass the authManager from mapManager
                     .environmentObject(mapManager.authManager)
             }
         }
@@ -71,9 +70,7 @@ struct MapView: View {
                 mapManager.centerMap(on: parking.coordinate)
             }
         }
-        .onAppear {
-            mapManager.loadParkings()
-        }
+        
     }
 }
 

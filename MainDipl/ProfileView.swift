@@ -1,27 +1,27 @@
-// Views/ProfileView.swift
 import SwiftUI
 
 struct ProfileView: View {
+    let parking: Parking?
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var reservationsManager: ReservationsManager
+    @EnvironmentObject var mapManager: MapManager
     @State private var showHistory = false
     @State private var showArrivalConfirmation = false
     @State private var showCompleteBooking = false
     @State private var errorMessage: String?
-    @State private var isLoading = true
-    
+
     private let backgroundColor = Color(hex: "8DDCF7")
-    
+
     var body: some View {
         NavigationView {
             ZStack {
                 backgroundColor.edgesIgnoringSafeArea(.all)
-                
+
                 ScrollView {
                     VStack(spacing: 20) {
                         if let user = authManager.currentUser {
                             userCard(user: user)
-                            bookingCard()
+                            currentBookingSection()
                             historyCard()
                             logoutButton()
                         } else {
@@ -29,6 +29,13 @@ struct ProfileView: View {
                         }
                     }
                     .padding()
+                }
+
+                if let error = errorMessage {
+                    ErrorMessageView(message: error) {
+                        errorMessage = nil
+                    }
+                    .transition(.move(edge: .top))
                 }
             }
             .sheet(isPresented: $showHistory) {
@@ -44,8 +51,9 @@ struct ProfileView: View {
             .sheet(isPresented: $showCompleteBooking, onDismiss: {
                 reservationsManager.loadActiveReservation()
             }) {
-                if let reservation = reservationsManager.activeReservation {
-                    CompleteBookingView(reservation: reservation)
+                if let reservation = reservationsManager.activeReservation,
+                   let parking = mapManager.parkings.first(where: { $0.name == reservation.parkingName }) {
+                    CompleteBookingView(reservation: reservation, parking: parking)
                 }
             }
             .onAppear {
@@ -53,60 +61,38 @@ struct ProfileView: View {
                     reservationsManager.loadActiveReservation()
                 }
             }
-            .overlay(
-                Group {
-                    if let error = errorMessage {
-                        ErrorMessageView(message: error) {
-                            errorMessage = nil
-                        }
-                        .transition(.move(edge: .top))
-                    }
-                }
-            )
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
-    
-    // MARK: - Custom Views
-    
+
+    // MARK: - UI Components
+
     private func userCard(user: User) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "person.circle.fill")
                     .font(.system(size: 40))
                     .foregroundColor(.blue)
-                
-                VStack(alignment: .leading, spacing: 4) {
+
+                VStack(alignment: .leading) {
                     Text(user.email)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
+                        .font(.title2).fontWeight(.semibold)
                     Text(user.phoneNumber)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.subheadline).foregroundColor(.secondary)
                 }
             }
-            
+
             Divider()
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Номер авто")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    Text(user.registrationNumber)
-                }
-                
-                Spacer()
-            }
+
+            Text("Номер авто: \(user.registrationNumber)")
         }
         .padding()
         .background(Color.white)
         .cornerRadius(12)
         .shadow(radius: 3)
     }
-    
-    private func bookingCard() -> some View {
+
+    private func currentBookingSection() -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "parkingsign.circle.fill")
@@ -114,55 +100,42 @@ struct ProfileView: View {
                 Text("Текущее бронирование")
                     .font(.headline)
             }
-            
+
             Divider()
-            
+
             if let reservation = reservationsManager.activeReservation {
-                VStack(alignment: .leading, spacing: 8) {
-                    bookingInfoRow(icon: "mappin.circle", title: "Парковка", value: reservation.parkingName)
-                    bookingInfoRow(icon: "number.circle", title: "Место", value: reservation.spotNumber)
-                    
-                    if reservation.parkingStart != nil {
-                        bookingInfoRow(icon: "clock.fill", title: "Начато", value: formattedTime(reservation.parkingStart!))
-                        
-                        Button(action: { showCompleteBooking = true }) {
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Завершить бронирование")
-                            }
-                            .frame(maxWidth: .infinity)
+                switch reservation.status.uppercased() {
+                case "PENDING":
+                    // Показываем кнопки для PENDING
+                    bookingDetails(reservation)
+                    HStack {
+                        Button("Подтвердить прибытие") {
+                            showArrivalConfirmation = true
                         }
                         .buttonStyle(.borderedProminent)
-                        .padding(.top, 8)
-                    } else {
-                        bookingInfoRow(icon: "clock.fill", title: "Забронировано", value: formattedTime(reservation.reservationStart))
-                        
-                        HStack {
-                            Button(action: { showArrivalConfirmation = true }) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                    Text("Подтвердить прибытие")
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            
-                            Button(action: cancelBooking) {
-                                HStack {
-                                    Image(systemName: "xmark.circle.fill")
-                                    Text("Отменить")
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.red)
+
+                        Button("Отменить") {
+                            cancelBooking()
                         }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
                     }
+
+                case "ONGOING":
+                    // Показываем кнопку завершения для ONGOING
+                    bookingDetails(reservation)
+                    Button("Завершить бронирование") {
+                        showCompleteBooking = true
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                default:
+                    Text("Нет активных бронирований")
+                        .foregroundColor(.secondary)
                 }
             } else {
                 Text("Нет активных бронирований")
                     .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .padding()
@@ -170,7 +143,20 @@ struct ProfileView: View {
         .cornerRadius(12)
         .shadow(radius: 3)
     }
-    
+
+    private func bookingDetails(_ reservation: Reservation) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            bookingInfoRow(icon: "mappin.circle", title: "Парковка", value: reservation.parkingName)
+            bookingInfoRow(icon: "number.circle", title: "Место", value: reservation.spotNumber)
+
+            if let start = reservation.parkingStart {
+                bookingInfoRow(icon: "clock.fill", title: "Начато", value: formattedTime(start))
+            } else {
+                bookingInfoRow(icon: "clock.fill", title: "Забронировано", value: formattedTime(reservation.reservationStart))
+            }
+        }
+    }
+
     private func bookingInfoRow(icon: String, title: String, value: String) -> some View {
         HStack {
             Image(systemName: icon)
@@ -184,7 +170,7 @@ struct ProfileView: View {
             Spacer()
         }
     }
-    
+
     private func historyCard() -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -193,9 +179,9 @@ struct ProfileView: View {
                 Text("История бронирований")
                     .font(.headline)
             }
-            
+
             Divider()
-            
+
             if reservationsManager.reservationsHistory.isEmpty {
                 Text("Нет истории бронирований")
                     .foregroundColor(.secondary)
@@ -216,7 +202,7 @@ struct ProfileView: View {
         .cornerRadius(12)
         .shadow(radius: 3)
     }
-    
+
     private func logoutButton() -> some View {
         Button(action: {
             let alert = UIAlertController(
@@ -224,25 +210,22 @@ struct ProfileView: View {
                 message: "Вы точно хотите выйти из аккаунта?",
                 preferredStyle: .alert
             )
-            
+
             alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { _ in
                 reservationsManager.activeReservation = nil
                 reservationsManager.reservationsHistory = []
                 authManager.logout { result in
-                    switch result {
-                    case .success:
-                        print("Успешный выход")
-                    case .failure(let error):
+                    if case .failure(let error) = result {
                         errorMessage = error.localizedDescription
                     }
                 }
             })
-            
+
             alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-            
+
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let rootViewController = windowScene.windows.first?.rootViewController {
-                rootViewController.present(alert, animated: true)
+               let rootVC = windowScene.windows.first?.rootViewController {
+                rootVC.present(alert, animated: true)
             }
         }) {
             HStack {
@@ -257,12 +240,12 @@ struct ProfileView: View {
         }
         .foregroundColor(.red)
     }
-    
+
     private func authRequiredView() -> some View {
         VStack {
             Text("Требуется авторизация")
                 .foregroundColor(.secondary)
-            
+
             NavigationLink(destination: LoginView()) {
                 Text("Войти")
                     .frame(maxWidth: .infinity)
@@ -277,43 +260,43 @@ struct ProfileView: View {
         .cornerRadius(12)
         .shadow(radius: 3)
     }
-    
-    // MARK: - Methods
-    
+
+    // MARK: - Logic
+
     private func cancelBooking() {
         reservationsManager.cancelActiveReservation { result in
             DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    break
-                case .failure(let error):
+                if case .failure(let error) = result {
                     errorMessage = error.localizedDescription
                 }
             }
         }
     }
-    
+
     private func formattedTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
+        formatter.dateStyle = .none
         return formatter.string(from: date)
     }
 }
 
-// Расширение для создания Color из hex-строки
+// MARK: - Helpers
+
 extension Color {
     init(hex: String) {
         let scanner = Scanner(string: hex)
         var rgbValue: UInt64 = 0
         scanner.scanHexInt64(&rgbValue)
-        
+
         let r = Double((rgbValue & 0xFF0000) >> 16) / 255.0
         let g = Double((rgbValue & 0x00FF00) >> 8) / 255.0
         let b = Double(rgbValue & 0x0000FF) / 255.0
-        
+
         self.init(red: r, green: g, blue: b)
     }
 }
+
 
 struct ArrivalConfirmationView: View {
     let reservation: Reservation
@@ -399,6 +382,8 @@ struct ArrivalConfirmationView: View {
                 
                 switch result {
                 case .success:
+                    // Обновляем данные после успешного подтверждения
+                    reservationsManager.loadActiveReservation()
                     showSuccess = true
                 case .failure(let error):
                     errorMessage = error.localizedDescription
@@ -410,6 +395,7 @@ struct ArrivalConfirmationView: View {
 
 struct CompleteBookingView: View {
     let reservation: Reservation
+    let parking: Parking
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showConfirmation = false
@@ -418,7 +404,7 @@ struct CompleteBookingView: View {
 
     private var timeParked: String {
         guard let start = reservation.parkingStart else { return "Нет данных" }
-        let end = Date()
+        let end = Date() // Текущее время как время завершения
         let formatter = DateComponentsFormatter()
         formatter.unitsStyle = .abbreviated
         formatter.allowedUnits = [.hour, .minute]
@@ -430,9 +416,9 @@ struct CompleteBookingView: View {
         let end = Date()
         let seconds = end.timeIntervalSince(start)
         let hours = max(1, Int(ceil(seconds / 3600)))
-        let price = Double(hours) * 100 // Используем стандартную цену 100 руб/час
+        let totalPrice = Double(hours) * parking.price
         
-        return "\(Int(price)) руб"
+        return "\(Int(totalPrice)) руб"
     }
     
     var body: some View {
@@ -456,6 +442,7 @@ struct CompleteBookingView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     InfoRow(title: "Парковка:", value: reservation.parkingName)
                     InfoRow(title: "Место:", value: reservation.spotNumber)
+                    InfoRow(title: "Тариф:", value: "\(Int(parking.price)) руб/час")
                     
                     if let start = reservation.parkingStart {
                         InfoRow(title: "Начато:", value: formattedTime(start))

@@ -10,15 +10,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>1</string>
+					<string>0</string>
 					<key>EndingLineNumber</key>
 					<string>24</string>
 					<key>StartingColumnNumber</key>
-					<string>1</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
 					<string>24</string>
 					<key>Timestamp</key>
-					<string>770008231.411926</string>
+					<string>770155174.624844</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -36,12 +36,11 @@
 				<key>focused</key>
 				<string></string>
 				<key>leading</key>
-				<string>        .accentColor(.blue)
-    }
-}</string>
-				<key>trailing</key>
-				<string>
+				<string>    }
+}
 </string>
+				<key>trailing</key>
+				<string></string>
 			</dict>
 			<key>title</key>
 			<string>Error: Cannot convert value of type 'AuthManager.Type' to expected argument type 'AuthManager'</string>
@@ -54,15 +53,15 @@
 				<key>location-parameters</key>
 				<dict>
 					<key>EndingColumnNumber</key>
-					<string>1</string>
+					<string>0</string>
 					<key>EndingLineNumber</key>
 					<string>24</string>
 					<key>StartingColumnNumber</key>
-					<string>1</string>
+					<string>0</string>
 					<key>StartingLineNumber</key>
 					<string>24</string>
 					<key>Timestamp</key>
-					<string>770008231.411963</string>
+					<string>770155174.624797</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -80,12 +79,11 @@
 				<key>focused</key>
 				<string></string>
 				<key>leading</key>
-				<string>        .accentColor(.blue)
-    }
-}</string>
-				<key>trailing</key>
-				<string>
+				<string>    }
+}
 </string>
+				<key>trailing</key>
+				<string></string>
 			</dict>
 			<key>title</key>
 			<string>Error: 'MapView' initializer is inaccessible due to 'private' protection level</string>

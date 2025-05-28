@@ -10,6 +10,7 @@ struct BookingView: View {
     @State private var showSuccess = false
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var reservationsManager: ReservationsManager
+    @EnvironmentObject var mapManager: MapManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -66,6 +67,7 @@ struct BookingView: View {
             Button("OK") {
                 isPresented = false
                 reservationsManager.loadActiveReservation()
+                mapManager.loadParkings()
             }
         } message: {
             Text("Место \(spot.spotNumber) забронировано. Подъедьте к месту в течение 15 минут.")

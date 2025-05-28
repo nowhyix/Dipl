@@ -29,9 +29,15 @@ class ReservationsManager: ObservableObject {
                 
                 switch result {
                 case .success(let reservations):
-                    let active = reservations.first { $0.status.lowercased() == "active" }
+                    let active = reservations.first {
+                        let status = $0.status.lowercased()
+                        return status == "active" || status == "pending" || status == "ongoing"
+                    }
                     self?.activeReservation = active
-                    self?.reservationsHistory = reservations.filter { $0.status.lowercased() != "active" }
+                    self?.reservationsHistory = reservations.filter {
+                        let status = $0.status.lowercased()
+                        return status != "active" && status != "pending" && status != "ongoing"
+                    }
                     completion?(active)
                 case .failure(let error):
                     self?.error = error
