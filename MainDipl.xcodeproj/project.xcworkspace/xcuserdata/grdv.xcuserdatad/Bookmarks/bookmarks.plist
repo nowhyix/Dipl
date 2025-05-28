@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>top-level-items</key>
+	<array>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>1</string>
+					<key>EndingLineNumber</key>
+					<string>24</string>
+					<key>StartingColumnNumber</key>
+					<string>1</string>
+					<key>StartingLineNumber</key>
+					<string>24</string>
+					<key>Timestamp</key>
+					<string>770008231.411926</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>MainDipl/MainTabView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string></string>
+				<key>leading</key>
+				<string>        .accentColor(.blue)
+    }
+}</string>
+				<key>trailing</key>
+				<string>
+</string>
+			</dict>
+			<key>title</key>
+			<string>Error: Cannot convert value of type 'AuthManager.Type' to expected argument type 'AuthManager'</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+		<dict>
+			<key>destination</key>
+			<dict>
+				<key>location-parameters</key>
+				<dict>
+					<key>EndingColumnNumber</key>
+					<string>1</string>
+					<key>EndingLineNumber</key>
+					<string>24</string>
+					<key>StartingColumnNumber</key>
+					<string>1</string>
+					<key>StartingLineNumber</key>
+					<string>24</string>
+					<key>Timestamp</key>
+					<string>770008231.411963</string>
+				</dict>
+				<key>rebasable-url</key>
+				<dict>
+					<key>base</key>
+					<string>workspace</string>
+					<key>payload</key>
+					<dict>
+						<key>relative-path</key>
+						<string>MainDipl/MainTabView.swift</string>
+					</dict>
+				</dict>
+			</dict>
+			<key>text-context</key>
+			<dict>
+				<key>focused</key>
+				<string></string>
+				<key>leading</key>
+				<string>        .accentColor(.blue)
+    }
+}</string>
+				<key>trailing</key>
+				<string>
+</string>
+			</dict>
+			<key>title</key>
+			<string>Error: 'MapView' initializer is inaccessible due to 'private' protection level</string>
+			<key>type</key>
+			<string>bookmark</string>
+		</dict>
+	</array>
+</dict>
+</plist>
