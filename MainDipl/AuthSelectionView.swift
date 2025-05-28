@@ -33,30 +33,6 @@ struct AuthSelectionView: View {
                     .padding(.top, 50)
                     
                     Spacer()
-                    
-                    VStack(spacing: 20) {
-                        NavigationLink(destination: LoginView()) {
-                            Text("Авторизация")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.white)
-                                .foregroundColor(.black)
-                                .font(.headline)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .shadow(radius: 5)
-                        }
-                        
-                        NavigationLink(destination: RegistrationView()) {
-                            Text("Регистрация")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.white)
-                                .foregroundColor(.black)
-                                .font(.headline)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .shadow(radius: 5)
-                        }
-                    }
                     .padding(.horizontal, 30)
                     .padding(.bottom, 50)
                 }

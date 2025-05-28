@@ -8,11 +8,12 @@ class ReservationsManager: ObservableObject {
     @Published var reservationsHistory: [Reservation] = []
     @Published var isLoading = false
     @Published var error: Error?
-    @EnvironmentObject var authManager: AuthManager
     
-
+    let authManager: AuthManager
     
-    init() {}
+    init(authManager: AuthManager) {
+        self.authManager = authManager
+    }
     
     func loadActiveReservation(completion: ((Reservation?) -> Void)? = nil) {
         guard let token = authManager.getAccessToken() else {

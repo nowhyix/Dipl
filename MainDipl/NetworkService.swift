@@ -153,6 +153,8 @@ class NetworkService {
                 return
             }
             
+            print("Raw response data:", String(data: data, encoding: .utf8) ?? "nil")
+            
             do {
                 let decoder = JSONDecoder()
                 let dateFormatter = ISO8601DateFormatter()

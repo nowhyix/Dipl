@@ -3,17 +3,20 @@ import SwiftUI
 struct SplashScreenView: View {
     @State private var isActive = false
     @EnvironmentObject var authManager: AuthManager
-    @StateObject private var mapData = MapDataManager()
+    @EnvironmentObject var mapManager: MapManager
+    @EnvironmentObject var reservationsManager: ReservationsManager
     
     var body: some View {
         Group {
             if isActive {
-                if authManager.isLoggedIn && mapData.isMapLoaded {
-                    MainTabView() // Не нужно снова передавать authManager
-                } else if !authManager.isLoggedIn {
-                    LoginView()
+                if authManager.isLoggedIn {
+                    MainTabView()
+                        .environmentObject(authManager)
+                        .environmentObject(mapManager)
+                        .environmentObject(reservationsManager)
                 } else {
-                    ProgressView()
+                    LoginView()
+                        .environmentObject(authManager)
                 }
             } else {
                 splashContent
@@ -26,10 +29,14 @@ struct SplashScreenView: View {
                 }
             }
             
-            // Загружаем данные карты
-            mapData.loadMapData()
+            // Load initial data if logged in
+            if authManager.isLoggedIn {
+                mapManager.loadParkings()
+                reservationsManager.loadActiveReservation()
+            }
         }
     }
+
     
     private var splashContent: some View {
         ZStack {

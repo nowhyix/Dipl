@@ -7,8 +7,6 @@ struct MapView: View {
     @State private var selectedParking: Parking?
     @State private var showParkingCard = false
     @State private var showParkingDetail = false
-    @EnvironmentObject var authManager: AuthManager
-    
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -64,6 +62,7 @@ struct MapView: View {
         .fullScreenCover(isPresented: $showParkingDetail) {
             if let parking = selectedParking {
                 ParkingDetailView(parking: parking)
+                    // Pass the authManager from mapManager
                     .environmentObject(mapManager.authManager)
             }
         }
@@ -71,6 +70,9 @@ struct MapView: View {
             if let parking = parking {
                 mapManager.centerMap(on: parking.coordinate)
             }
+        }
+        .onAppear {
+            mapManager.loadParkings()
         }
     }
 }
@@ -152,15 +154,19 @@ class MapManager: ObservableObject {
     @Published var parkings: [Parking] = []
     @Published var isLoading = false
     @Published var error: Error?
-    @EnvironmentObject var authManager: AuthManager
     
-    init() {}
+    let authManager: AuthManager
+    
+    init(authManager: AuthManager) {
+        self.authManager = authManager
+    }
     
     func loadParkings() {
         guard let token = authManager.getAccessToken() else {
             error = NetworkError.unauthorized
             return
         }
+        print("Access Token:", token)
         
         isLoading = true
         NetworkService.shared.fetchParkings(token: token) { [weak self] result in
