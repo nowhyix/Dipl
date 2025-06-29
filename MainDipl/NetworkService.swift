@@ -1,4 +1,3 @@
-// Services/NetworkService.swift
 import Foundation
 
 enum NetworkError: Error {
@@ -176,7 +175,6 @@ class NetworkService {
                 return
             }
             
-            // Handle empty response for DELETE/PUT requests
             if method == "DELETE" || method == "PUT" {
                 if let emptyResponse = EmptyResponse() as? T {
                     completion(.success(emptyResponse))

@@ -218,7 +218,6 @@ struct BookingView: View {
     }
 }
 
-// Обновленный InfoRow для единого стиля
 struct InfoRow: View {
     let title: String
     let value: String

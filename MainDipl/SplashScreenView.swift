@@ -28,8 +28,7 @@ struct SplashScreenView: View {
                     isActive = true
                 }
             }
-            
-            // Load initial data if logged in
+
             if authManager.isLoggedIn {
                 mapManager.loadParkings()
                 reservationsManager.loadActiveReservation()
