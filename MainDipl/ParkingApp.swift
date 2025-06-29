@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct ParkingApp: App {
+    
     @StateObject var authManager: AuthManager
     @StateObject var appState: AppState
     @StateObject var reservationsManager: ReservationsManager

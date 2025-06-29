@@ -114,13 +114,26 @@ struct LoginView: View {
                 ErrorMessageView(message: error) {
                     errorMessage = nil
                 }
-                .transition(.move(edge: .top))
-                .animation(.spring(), value: errorMessage)
             }
         }
     }
     
     private func login() {
+        // Проверка пустых полей
+        guard !email.isEmpty, !password.isEmpty else {
+            errorMessage = "Заполните поля: email и пароль!"
+            return
+        }
+        
+        // Проверка формата email
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
+        
+        if !emailPredicate.evaluate(with: email) {
+            errorMessage = "Введите корректный email"
+            return
+        }
+        
         errorMessage = nil
         isLoading = true
         

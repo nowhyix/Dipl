@@ -114,11 +114,9 @@ struct RegistrationView: View {
             }
             // Плашка ошибки
             if let error = errorMessage {
-                ErrorBanner(message: error) {
+                ErrorMessageView(message: error) {
                     errorMessage = nil
                 }
-                .transition(.move(edge: .top))
-                .animation(.spring(), value: errorMessage)
             }
         }
         .sheet(isPresented: $showSuccessModal) {

@@ -15,7 +15,13 @@ class ReservationsManager: ObservableObject {
         self.authManager = authManager
     }
     
-    func loadActiveReservation(completion: ((Reservation?) -> Void)? = nil) {
+    func loadActiveReservation(forceReload: Bool = false, completion: ((Reservation?) -> Void)? = nil) {
+        // Если у нас уже есть активная бронь и не требуется принудительная перезагрузка, просто вернем существующие данные
+        if !forceReload && activeReservation != nil {
+            completion?(activeReservation)
+            return
+        }
+        
         guard let token = authManager.getAccessToken() else {
             activeReservation = nil
             completion?(nil)
@@ -26,7 +32,6 @@ class ReservationsManager: ObservableObject {
         NetworkService.shared.fetchReservations(token: token) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                
                 switch result {
                 case .success(let reservations):
                     let active = reservations.first {
@@ -71,17 +76,21 @@ class ReservationsManager: ObservableObject {
         }
     }
     
-    func confirmArrival(completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let reservation = activeReservation, let token = authManager.getAccessToken() else {
+    func confirmArrival(cardId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let reservation = activeReservation,
+              let token = authManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
         }
         
         isLoading = true
-        NetworkService.shared.confirmArrival(reservationId: reservation.id, token: token) { [weak self] result in
+        NetworkService.shared.confirmArrival(
+            reservationId: reservation.id,
+            cardId: cardId,
+            token: token
+        ) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                
                 switch result {
                 case .success:
                     self?.loadActiveReservation()
@@ -94,27 +103,33 @@ class ReservationsManager: ObservableObject {
         }
     }
     
-    func completeParking(completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let reservation = activeReservation, let token = authManager.getAccessToken() else {
+    func completeParking(price: Double, endTime: Date, duration: TimeInterval, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let reservation = activeReservation,
+              let token = authManager.getAccessToken() else {
             completion(.failure(NetworkError.unauthorized))
             return
         }
         
-        isLoading = true
-        NetworkService.shared.completeParking(reservationId: reservation.id, token: token) { [weak self] result in
+        let dateFormatter = ISO8601DateFormatter()
+        let endTimeString = dateFormatter.string(from: endTime)
+        
+        NetworkService.shared.completeParking(
+            reservationId: reservation.id,
+            price: price,
+            endTime: endTimeString,
+            token: token, duration: duration
+        ) { [weak self] result in
             DispatchQueue.main.async {
-                self?.isLoading = false
-                
                 switch result {
                 case .success:
                     self?.activeReservation = nil
                     self?.loadActiveReservation()
                     completion(.success(()))
                 case .failure(let error):
-                    self?.error = error
                     completion(.failure(error))
                 }
             }
         }
     }
+    
 }

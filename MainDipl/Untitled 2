@@ -42,10 +42,7 @@ struct ProfileView: View {
                 BookingHistoryView(reservations: reservationsManager.reservationsHistory)
             }
             .sheet(isPresented: $showArrivalConfirmation, onDismiss: {
-                // Добавляем небольшую задержку и принудительно перезагружаем
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    reservationsManager.loadActiveReservation(forceReload: true)
-                }
+                reservationsManager.loadActiveReservation()
             }) {
                 if let reservation = reservationsManager.activeReservation {
                     ArrivalConfirmationView(reservation: reservation)
@@ -60,11 +57,11 @@ struct ProfileView: View {
                 }
             }
             .onAppear {
-                if authManager.isLoggedIn && reservationsManager.activeReservation == nil {
-                    // Загружаем активное бронирование только если его еще нет
+                if authManager.isLoggedIn {
                     reservationsManager.loadActiveReservation()
                 }
-            }        }
+            }
+        }
         .navigationViewStyle(StackNavigationViewStyle())
     }
 
@@ -436,8 +433,6 @@ struct ArrivalConfirmationView: View {
         .animation(.default, value: errorMessage)
     }
     
-    
-    
     private func confirmArrival() {
         guard !cardId.isEmpty else {
             errorMessage = "Пожалуйста, введите ID карты"
@@ -451,10 +446,8 @@ struct ArrivalConfirmationView: View {
                 
                 switch result {
                 case .success:
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        reservationsManager.loadActiveReservation(forceReload: true)
-                        showSuccess = true
-                    }
+                    reservationsManager.loadActiveReservation()
+                    showSuccess = true
                 case .failure(let error):
                     errorMessage = error.localizedDescription
                 }
@@ -504,9 +497,11 @@ struct CompleteBookingView: View {
     private let accentColor = Color.blue
     private let backgroundColor = Color(.systemBackground)
     
+    // Фиксированное время начала парковки
     private var parkingStartDate: Date {
-        return reservation.parkingStart ?? reservation.reservationStart
+        return reservation.parkingStart ?? Date()
     }
+    
     // Форматирование времени
     private func formattedTime(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -646,11 +641,8 @@ struct CompleteBookingView: View {
         )
         .animation(.default, value: errorMessage)
         .onAppear {
-            // Устанавливаем начальное текущее время
-            currentTime = Date()
-            
-            // Обновляем ТОЛЬКО текущее время, не трогая parkingStartDate
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            // Запускаем таймер для обновления отображения
+            timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
                 currentTime = Date()
             }
         }
@@ -732,4 +724,5 @@ struct BookingHistoryView: View {
         return formatter.string(from: date)
     }
 }
+
 

@@ -11,58 +11,99 @@ struct BookingView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var reservationsManager: ReservationsManager
     @EnvironmentObject var mapManager: MapManager
+    
+    private let accentColor = Color.blue
+    private let backgroundColor = Color(.systemBackground)
+    private let warningColor = Color.orange
 
     var body: some View {
         VStack(spacing: 0) {
+            // Заголовок и кнопка закрытия
             HStack {
+                Text("Бронирование места")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.primary)
+                
                 Spacer()
-                Button(action: {
-                    isPresented = false
-                }) {
-                    Image(systemName: "xmark")
+                
+                Button(action: { isPresented = false }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
                         .foregroundColor(.gray)
-                        .padding()
                 }
             }
-
-            VStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Бронирование места")
-                        .font(.title2)
-                        .bold()
-
-                    InfoRow(title: "Парковка:", value: parking.name)
-                    InfoRow(title: "Адрес:", value: parking.address)
-                    InfoRow(title: "Место:", value: spot.spotNumber)
-                    InfoRow(title: "Цена:", value: "\(Int(parking.price)) руб/час")
+            .padding()
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Карточка с информацией о парковке
+                    VStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "parkingsign.circle.fill")
+                                .foregroundColor(accentColor)
+                            Text("Информация о парковке")
+                                .font(.headline)
+                            Spacer()
+                        }
+                        
+                        Divider()
+                        
+                        InfoRow(title: "Парковка:", value: parking.name)
+                        InfoRow(title: "Адрес:", value: parking.address)
+                        InfoRow(title: "Место:", value: spot.spotNumber)
+                        InfoRow(title: "Тариф:", value: "\(Int(parking.price)) руб/час")
+                    }
+                    .padding()
+                    .background(backgroundColor)
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    
+                    // Предупреждение о времени
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .foregroundColor(warningColor)
+                            Text("Важно!")
+                                .font(.headline)
+                                .foregroundColor(warningColor)
+                            Spacer()
+                        }
+                        
+                        Text("У вас есть 15 минут, чтобы прибыть на место. После этого бронь будет автоматически отменена.")
+                            .font(.subheadline)
+                            .foregroundColor(warningColor)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding()
+                    .background(warningColor.opacity(0.1))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(warningColor, lineWidth: 1)
+                    )
+                    
+                    // Кнопка бронирования
+                    Button(action: bookSpot) {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Забронировать место")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(accentColor)
+                    .controlSize(.large)
+                    .disabled(isLoading)
+                    .padding(.top, 8)
                 }
                 .padding()
-
-                Text("У вас есть 15 минут, чтобы прибыть на место. После этого бронь будет автоматически отменена.")
-                    .foregroundColor(.orange)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                Button(action: bookSpot) {
-                    if isLoading {
-                        ProgressView()
-                    } else {
-                        Text("Забронировать")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isLoading)
-                .padding(.horizontal)
-                .padding(.bottom)
             }
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(.systemBackground))
-                    .shadow(radius: 8)
-            )
-            .padding()
         }
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
         .alert("Бронирование подтверждено", isPresented: $showSuccess) {
             Button("OK") {
                 isPresented = false
@@ -75,13 +116,20 @@ struct BookingView: View {
         .overlay(
             Group {
                 if let error = errorMessage {
-                    ErrorMessageView(message: error) {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            errorMessage = nil
+                        }
+                    
+                    ErrorCardView(message: error) {
                         errorMessage = nil
                     }
-                    .transition(.move(edge: .top))
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
         )
+        .animation(.default, value: errorMessage)
     }
 
     private func bookSpot() {
@@ -108,6 +156,32 @@ struct BookingView: View {
                     handleBookingError(error)
                 }
             }
+        }
+    }
+    
+    struct ErrorCardView: View {
+        let message: String
+        let onDismiss: () -> Void
+        
+        var body: some View {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.red)
+                
+                Text(message)
+                    .multilineTextAlignment(.center)
+                    .font(.subheadline)
+                
+                Button("OK", action: onDismiss)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+            }
+            .padding()
+            .frame(maxWidth: 280)
+            .background(Color(.systemBackground))
+            .cornerRadius(15)
+            .shadow(radius: 10)
         }
     }
 
@@ -144,17 +218,22 @@ struct BookingView: View {
     }
 }
 
+// Обновленный InfoRow для единого стиля
 struct InfoRow: View {
     let title: String
     let value: String
-
+    
     var body: some View {
         HStack {
             Text(title)
-            Spacer()
+                .foregroundColor(.secondary)
+                .frame(width: 120, alignment: .leading)
+            
             Text(value)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.trailing)
+                .fontWeight(.medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.vertical, 4)
     }
 }
+

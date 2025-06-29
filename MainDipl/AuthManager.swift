@@ -2,10 +2,11 @@ import Foundation
 import KeychainSwift
 
 class AuthManager: ObservableObject {
+    
     @Published var isLoggedIn = false
     @Published var currentUser: User?
-    private let keychain = KeychainSwift()
     
+    private let keychain = KeychainSwift()
     private let baseURL = "http://localhost:20100"
     
     init() {
@@ -38,7 +39,7 @@ class AuthManager: ObservableObject {
         request.httpBody = jsonData
         
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
+            if let error {
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
@@ -52,7 +53,7 @@ class AuthManager: ObservableObject {
                 return
             }
             
-            guard let data = data else {
+            guard let data else {
                 DispatchQueue.main.async {
                     completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Нет данных от сервера"])))
                 }

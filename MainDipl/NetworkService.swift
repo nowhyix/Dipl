@@ -21,8 +21,10 @@ class NetworkService {
         request(endpoint: "/api/parking", method: "GET", token: token, completion: completion)
     }
     
-    func fetchParkingLevel(parkingId: Int, levelNumber: Int, token: String,
-                          completion: @escaping (Result<ParkingLevel, Error>) -> Void) {
+    func fetchParkingLevel(parkingId: Int,
+                           levelNumber: Int,
+                           token: String,
+                           completion: @escaping (Result<ParkingLevel, Error>) -> Void) {
         request(endpoint: "/api/parking/\(parkingId)/levels/\(levelNumber)",
                 method: "GET",
                 token: token,
@@ -65,31 +67,65 @@ class NetworkService {
         }
     }
     
-    func confirmArrival(reservationId: Int, token: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        request(endpoint: "/api/reservations/\(reservationId)",
-                method: "PUT",
-                token: token) { (result: Result<EmptyResponse, Error>) in
-            switch result {
-            case .success:
-                completion(.success(()))
-            case .failure(let error):
-                completion(.failure(error))
+    func confirmArrival(reservationId: Int, cardId: String, token: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        // Кодируем cardId для URL
+        let encodedCardId = cardId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? cardId
+        let endpoint = "/api/reservations/\(reservationId)?cardId=\(encodedCardId)"
+        
+        request(
+            endpoint: endpoint,
+            method: "PUT",
+            token: token
+        ) { (result: Result<EmptyResponse, Error>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    completion(.success(()))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
             }
         }
     }
     
-    func completeParking(reservationId: Int, token: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        let body = ["reservationId": reservationId]
-        let bodyData = try? JSONSerialization.data(withJSONObject: body)
+    // MARK: - Reservation Methods
+
+    func completeParking(
+        reservationId: Int,
+        price: Double,
+        endTime: String,
+        token: String,
+        duration: TimeInterval,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        // Рассчитываем продолжительность в минутах
+        let durationInMinutes = Int(duration / 60)
         
-        request(endpoint: "/tech/parkingSpots",
-                method: "POST",
-                body: bodyData,
-                token: token) { (result: Result<EmptyResponse, Error>) in
+        let body: [String: Any] = [
+            "parkingEnd": endTime,
+            "duration": durationInMinutes,
+            "cost": price
+        ]
+        
+        print("Тело запроса: \(body)")
+        
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
+            completion(.failure(NetworkError.invalidURL))
+            return
+        }
+        
+        request(
+            endpoint: "/api/reservations/complete/\(reservationId)",
+            method: "PUT",
+            body: bodyData,
+            token: token
+        ) { (result: Result<EmptyResponse, Error>) in
             switch result {
             case .success:
+                print("Успешный ответ от сервера")
                 completion(.success(()))
             case .failure(let error):
+                print("Ошибка от сервера: \(error)")
                 completion(.failure(error))
             }
         }
@@ -97,8 +133,8 @@ class NetworkService {
     
     // MARK: - Private Methods
     
-    private func request<T: Decodable>(endpoint: String, method: String, body: Data? = nil,
-                                      token: String? = nil, completion: @escaping (Result<T, Error>) -> Void) {
+    func request<T: Decodable>(endpoint: String, method: String, body: Data? = nil,
+                              token: String? = nil, completion: @escaping (Result<T, Error>) -> Void) {
         guard let url = URL(string: baseURL + endpoint) else {
             completion(.failure(NetworkError.invalidURL))
             return

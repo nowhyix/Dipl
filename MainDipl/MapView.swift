@@ -56,8 +56,7 @@ struct MapView: View {
                 }
             }
             .padding(.trailing, 15)
-            .padding(.bottom, 50)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            .position(x: UIScreen.main.bounds.width - 10, y: UIScreen.main.bounds.height / 2)
         }
         .fullScreenCover(isPresented: $showParkingDetail) {
             if let parking = selectedParking {
@@ -98,7 +97,7 @@ struct ParkingCardView: View {
                 .foregroundColor(.secondary)
             
             HStack {
-                Label("\(parking.spaceCount) мест", systemImage: "parkingsign.circle")
+                Label("\(parking.freeSpaceCount) мест свободно", systemImage: "parkingsign.circle")
                 Spacer()
                 Label("\(Int(parking.price)) руб/час", systemImage: "rublesign.circle")
             }
@@ -132,7 +131,7 @@ struct ParkingMapAnnotation: View {
                     .foregroundColor(.blue)
                     .background(Circle().fill(Color.white))
                 
-                Text("\(parking.spaceCount)")
+                Text("\(parking.freeSpaceCount)/\(parking.spaceCount)")
                     .font(.system(size: 10, weight: .bold))
                     .padding(4)
                     .background(Color.white)

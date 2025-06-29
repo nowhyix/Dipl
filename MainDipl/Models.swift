@@ -20,6 +20,7 @@ struct Parking: Codable, Identifiable, Equatable {
     let price: Double
     let levelCount: Int
     let spaceCount: Int
+    let freeSpaceCount: Int
     let levelNumbers: [Int]
     
     var coordinate: CLLocationCoordinate2D {
@@ -38,6 +39,7 @@ struct ParkingLevel: Codable {
 }
 
 struct ParkingSpot: Codable, Identifiable {
+    
     let id: Int
     let spotNumber: String
     let status: String
@@ -121,3 +123,5 @@ struct Reservation: Codable, Identifiable {
          status = try container.decode(String.self, forKey: .status)
      }
  }
+
+

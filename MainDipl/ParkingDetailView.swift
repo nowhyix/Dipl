@@ -3,15 +3,18 @@ import SwiftUI
 import SDWebImageSwiftUI
 
 struct ParkingDetailView: View {
-    let parking: Parking
+    
     @State private var selectedLevel: Int = 1
     @State private var parkingLevel: ParkingLevel?
     @State private var isLoading = false
     @State private var error: Error?
     @State private var selectedSpot: ParkingSpot?
     @State private var showBookingView = false
+    
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthManager
+    
+    let parking: Parking
 
     var body: some View {
         GeometryReader { geometry in
@@ -21,6 +24,10 @@ struct ParkingDetailView: View {
 
                     if let level = parkingLevel {
                         LevelMapView(level: level, selectedSpot: $selectedSpot)
+                            .onTapGesture {
+                                // Отменяем выбор места при нажатии на свободную область
+                                selectedSpot = nil
+                            }
                     } else if isLoading {
                         ProgressView()
                     } else if let error = error {
@@ -28,31 +35,29 @@ struct ParkingDetailView: View {
                     }
                 }
 
-                // Панель с кнопками уровней — по правому краю и вертикально по центру
-                HStack {
-                    Spacer()
-                    VStack {
-                        ForEach(parking.levelNumbers, id: \.self) { level in
-                            Button(action: {
-                                selectedLevel = level
-                                loadLevelData()
-                            }) {
-                                Text("\(level)")
-                                    .frame(width: 40, height: 40)
-                                    .background(selectedLevel == level ? Color.gray : Color.clear)
-                                    .foregroundColor(.black)
-                                    .cornerRadius(8)
-                                    .padding(.vertical, 4)
-                            }
+                // Панель с кнопками уровней
+                VStack(spacing: 10) {
+                    ForEach(parking.levelNumbers, id: \.self) { level in
+                        Button(action: {
+                            selectedLevel = level
+                            loadLevelData()
+                        }) {
+                            Text("\(level)")
+                                .frame(width: 40, height: 40)
+                                .background(selectedLevel == level ? Color.gray : Color.clear)
+                                .foregroundColor(.black)
+                                .cornerRadius(8)
                         }
                     }
-                    .padding()
-                    .cornerRadius(12)
-                    .shadow(radius: 3)
-                    .padding(.trailing, 8)
                 }
-                .frame(width: geometry.size.width, height: geometry.size.height)
-
+                .padding(10)
+                .cornerRadius(12)
+                .shadow(radius: 3)
+                .position(
+                    x: geometry.size.width - 20, // от правого края
+                    y: geometry.size.height / 2  // по центру вертикали
+                )
+                
                 // Кнопка бронирования снизу
                 if let spot = selectedSpot {
                     VStack {
@@ -62,7 +67,6 @@ struct ParkingDetailView: View {
                     .transition(.move(edge: .bottom))
                 }
             }
-            .edgesIgnoringSafeArea(.bottom)
             .onAppear {
                 loadLevelData()
             }
@@ -91,7 +95,7 @@ struct ParkingDetailView: View {
                     .foregroundColor(.secondary)
                 
                 HStack {
-                    InfoBadge(icon: "p.circle", title: "Мест", value: "\(parking.spaceCount)")
+                    InfoBadge(icon: "p.circle", title: "Мест свободно", value: "\(parking.freeSpaceCount)")
                     Spacer()
                     InfoBadge(icon: "rublesign.circle", title: "Цена", value: "\(Int(parking.price)) руб/час")
                 }
@@ -270,3 +274,4 @@ struct ErrorView: View {
         .padding()
     }
 }
+
